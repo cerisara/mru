@@ -1,5 +1,3 @@
-" File: mru.vim
-" Author: Yegappan Lakshmanan (yegappan AT yahoo DOT com)
 " Version: 3.9
 " Last Modified: Feb 3, 2015
 " Copyright: Copyright (C) 2003-2015 Yegappan Lakshmanan
@@ -233,10 +231,6 @@ let s:cpo_save = &cpo
 set cpo&vim
 
 " MRU configuration variables {{{1
-" Maximum number of entries allowed in the MRU list
-if !exists('MRU_Max_Entries')
-    let MRU_Max_Entries = 100
-endif
 
 " Files to exclude from the MRU list
 if !exists('MRU_Exclude_Files')
@@ -278,7 +272,7 @@ endif
 
 " Option for enabling or disabling the MRU menu
 if !exists('MRU_Add_Menu')
-    let MRU_Add_Menu = 1
+    let MRU_Add_Menu = 0
 endif
 
 " Maximum number of file names to show in the MRU menu. If too many files are
@@ -358,11 +352,10 @@ endfunction
 
 " MRU_SaveList                          {{{1
 " Saves the MRU file names to the MRU file
-function! s:MRU_SaveList()
-    let l = []
-    call add(l, '# Most recently edited files in Vim (version 3.0)')
-    call extend(l, s:MRU_files)
-    call writefile(l, g:MRU_File)
+function! s:MRU_SaveFile(filetoappend)
+    let l = [strftime("%y%m%d")." ".a:filetoappend]
+    call writefile(l, "/tmp/mru_temp_fich")
+    call system("cat /tmp/mru_temp_fich >> /home/xtof/git/LORIA/vimfiles")
 endfunction
 
 " MRU_AddFile                           {{{1
@@ -402,46 +395,9 @@ function! s:MRU_AddFile(acmd_bufnr)
         endif
     endif
 
-    " If the filename is not already present in the MRU list and is not
-    " readable then ignore it
-    let idx = index(s:MRU_files, fname)
-    if idx == -1
-        if !filereadable(fname)
-            " File is not readable and is not in the MRU list
-            return
-        endif
-    endif
-
-    " Load the latest MRU file list
-    call s:MRU_LoadList()
-
-    " Remove the new file name from the existing MRU list (if already present)
-    call filter(s:MRU_files, 'v:val !=# fname')
-
-    " Add the new file list to the beginning of the updated old file list
-    call insert(s:MRU_files, fname, 0)
-
-    " Trim the list
-    if len(s:MRU_files) > g:MRU_Max_Entries
-        call remove(s:MRU_files, g:MRU_Max_Entries, -1)
-    endif
-
     " Save the updated MRU list
-    call s:MRU_SaveList()
+    call s:MRU_SaveFile(fname)
 
-    " Refresh the MRU menu
-    call s:MRU_Refresh_Menu()
-
-    " If the MRU window is open, update the displayed MRU list
-    let bname = '__MRU_Files__'
-    let winnum = bufwinnr(bname)
-    if winnum != -1
-        let cur_winnr = winnr()
-        call s:MRU_Open_Window()
-        if winnr() != cur_winnr
-            exe cur_winnr . 'wincmd w'
-        endif
-    endif
 endfunction
 
 " MRU_escape_filename                   {{{1
